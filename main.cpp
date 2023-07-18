@@ -1,56 +1,16 @@
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 #include <iostream>
+#include <vector>
 #include <math.h>
 
 const float PI = 3.14159265358979323;
 
-GLuint VAO1, VAO2;
+const float g = 9.80665;
+
+GLuint VAO1, VAO2, VAO3;
 
 GLuint shaderProgram;
-
-float radius1 = 0.01;
-const int iterations1 = 20;
-float beta1 = 360.0f / iterations1 * (2 * PI / 360.0f);
-float alpha1 = beta1;
-GLfloat vertices1[6 * iterations1];													
-GLfloat colors1[9 * iterations1];
-
-float deltatime1 = 0.0;
-float frametime1 = 0.0;
-
-float ObjectPositionX1 = -0.97;
-float ObjectPositionY1 = -0.97;
-float ObjectPositionZ1 = 0.0;
-
-float ObjectVelocityX1 = 0.7;
-float ObjectVelocityY1 = 0.5;
-float ObjectVelocityZ1 = 0.0;
-
-float ObjectAccelerationX1 =  0.5;
-float ObjectAccelerationY1 = -0.4905;
-
-
-float radius2 = 0.01;
-const int iterations2 = 20;
-float beta2 = 360.0f / iterations2 * (2 * PI / 360.0f);
-float alpha2 = beta2;
-GLfloat vertices2[6 * iterations2];													
-GLfloat colors2[9 * iterations2];
-
-float deltatime2 = 0.0;
-float frametime2 = 0.0;
-
-float ObjectPositionX2 =  0.97;
-float ObjectPositionY2 = -0.97;
-float ObjectPositionZ2 =  0.0;
-
-float ObjectVelocityX2 = -0.7;
-float ObjectVelocityY2 =  0.5;
-float ObjectVelocityZ2 =  0.0;
-
-float ObjectAccelerationX2 = -0.5;
-float ObjectAccelerationY2 = -0.4905;
 
 const GLchar* vertexShaderSource = R"(
 
@@ -85,25 +45,115 @@ const GLchar* fragmentShaderSource = R"(
 
 )";
 
+class object {
 
-void init();
+	public:
 
-void display();
+		//Physical properties
+		float radius;
+		float mass;
+		float weight = (mass) * (g);
+
+		//Rendering properties
+		int iterations;
+		float alpha = 360 / 20 * (2 * PI / 360);
+		float beta = alpha;
+		/* const static int verticesArraySize = 6 * iterations; */
+		/* const static int colorsArraySize = 9 * iterations; */
+		GLfloat vertices[120];													
+		GLfloat colors[180];
+
+		//Goberning characteristics
+		float coordinatesX;
+		float coordinatesY;
+
+		float velocityX;
+		float velocityY;
+		float velocityModule = sqrt((velocityX * velocityX) + (velocityY * velocityY));
+
+		float accelerationX;
+		float accelerationY;
+		float accelerationModule = sqrt((accelerationX * accelerationX) + (accelerationY * accelerationY));
+
+		float angularVelocityZ;
+		float angularVelocityModule = sqrt(angularVelocityZ * angularVelocityZ);
+
+		float angularAccelerationZ;
+		float angularAcceleration = sqrt(angularAccelerationZ * angularAccelerationZ);
+
+		float linearMomentumX = (mass) * (velocityX);
+	   	float linearMomentumY = (mass) * (velocityY);
+		float linearMomentumModule = sqrt((linearMomentumX * linearMomentumX) + (linearMomentumY * linearMomentumY));
+ 		float momentInertia = (PI * (radius * radius * radius * radius)) / (4);
+
+		float kinetickEnergy = ((1/2) + (mass) + (velocityModule * velocityModule)) + ((1/2) + (momentInertia) + (angularVelocityZ * angularVelocityZ)); 
+		float potentialEnergy = (mass) * (g) * (coordinatesY + 0.5);
+
+		//Time characteristics
+		float deltaTime;
+		float frameTime;
+
+};
+
+class box {
+
+	public:
+
+		GLfloat verticesbox[16] {
+		
+			-0.99, -0.99,
+			 0.99, -0.99,
+
+			 0.99, -0.99,
+			 0.99,  0.99,
+
+			 0.99, 0.99,
+			-0.99, 0.99,
+
+			-0.99, 0.99,
+			-0.99, -0.99
+		};
+
+		GLfloat colorbox[24] = {
+
+			0.0f, 1.0f, 0.0f,
+			0.0f, 1.0f, 0.0f,
+
+			0.0f, 1.0f, 0.0f,
+			0.0f, 1.0f, 0.0f,
+
+			0.0f, 1.0f, 0.0f,
+			0.0f, 1.0f, 0.0f,
+
+			0.0f, 1.0f, 0.0f,
+			0.0f, 1.0f, 0.0f,
+
+		};
+
+};
+
+std::vector<object> init(std::vector<object> objects, box box1);
+
+void display(int iterations, GLfloat vertices[], GLfloat verticesbox[]);
 
 void framebufferSizeCallback(GLFWwindow* window, int width, int height);
 
-void rendersphere1(float radius1, int iterations1);
+void rendersphere(int iterations, float radius, GLfloat vertices[], GLfloat colors[], float alpha, float beta);
 
-void rendersphere2(float radius2, int iterations2);
+void renderbox(GLfloat verticesbox[], GLfloat colorsbox[]);
 
-void updateobjectposition1();
-
-void updateobjectposition2();
+void updateobjectposition(float radius, float mass, int iterations, float alpha, float beta, GLfloat vertices[],float coordinatesX, float coordinatesY, float velocityX, float velocityY, float accelerationX, float accelerationY, float deltaTime, float totalTime, GLfloat verticesbox[]);
 
 bool colisionDetection(float ObjectPositionX1, float ObjectPositionY1, float radius1, float ObjectPositionX2, float ObjectPositionY2, float radius2);
 
+bool colisionBorderDetection(float ObjectPositionX, float ObjectPositionY, float radius, GLfloat verticesbox[]);
+
 
 int main() {
+
+	std::vector<object> objects;
+
+	box box1;
 
     if (!glfwInit()) {
 
@@ -117,7 +167,7 @@ int main() {
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
     glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
 
-    GLFWwindow* window = glfwCreateWindow(1280, 720, "Dynamic Window", nullptr, nullptr);
+    GLFWwindow* window = glfwCreateWindow(3840, 2160, "Dynamic Window", nullptr, nullptr);
 
     if (!window) {
 
@@ -158,14 +208,19 @@ int main() {
     glDeleteShader(vertexShader);
     glDeleteShader(fragmentShader);
 
-    init();
+    objects = init(objects, box1);
 
     while (!glfwWindowShouldClose(window)) {
 
         glfwPollEvents();
-		updateobjectposition1();
-		updateobjectposition2();
-        display();
+
+		for (int i = 0; i < 2; i++) {
+	
+			updateobjectposition(objects[i].radius, objects[i].mass, objects[i].iterations, objects[i].alpha, objects[i].beta, objects[i].vertices, objects[i].coordinatesX, objects[i].coordinatesY, objects[i].velocityX, objects[i].velocityY, objects[i].accelerationX, objects[i].accelerationY, objects[i].deltaTime, objects[i].frameTime, box1.verticesbox);
+			display(objects[i].iterations, objects[i].vertices, box1.verticesbox);
+
+		}
+
         glfwSwapBuffers(window);
     
 	}
@@ -179,46 +234,98 @@ int main() {
     return 0;
 }
 
-void init() {
+std::vector<object> init(std::vector<object> objects, box box1) {
 
-	rendersphere1(radius1, iterations1);
-	rendersphere2(radius2, iterations2);
+	
+	objects.push_back(object());
 
-   }
+	objects[0].radius = 0.01;
+	objects[0].mass = 5;
 
-void display() {
+	objects[0].coordinatesX = 0.0;
+	objects[0].coordinatesY = 0.0;
+
+	objects[0].velocityX = 0.0;
+	objects[0].velocityY = 0.0;
+
+	objects[0].accelerationX = 0.0;
+	objects[0].accelerationY = 0.0;
+
+	objects[0].angularVelocityZ = 0.0;
+
+	objects[0].angularAccelerationZ = 0.0;
+
+	objects[0].deltaTime = 0.0;
+	objects[0].frameTime = 0.0;
+
+
+	objects.push_back(object());
+
+	objects[1].radius = 0.01;
+	objects[1].mass = 5;
+
+	objects[1].coordinatesX = 0.0;
+	objects[1].coordinatesY = 0.0;
+
+	objects[1].velocityX = 0.0;
+	objects[1].velocityY = 0.0;
+
+	objects[1].accelerationX = 0.0;
+	objects[1].accelerationY = 0.0;
+
+	objects[1].angularVelocityZ = 0.0;
+
+	objects[1].angularAccelerationZ = 0.0;
+
+	objects[1].deltaTime = 0.0;
+	objects[1].frameTime = 0.0;
+
+	for (int i = 0; i < 2; i++) {
+
+		rendersphere(objects[i].iterations, objects[i].radius, objects[i].vertices, objects[i].colors, objects[i].alpha, objects[i].beta);
+
+	}
+
+
+	renderbox(box1.verticesbox, box1.colorbox);
+
+	return objects;
+
+}
+
+void display(int iterations, GLfloat vertices, GLfloat verticesbox) {
 
 	glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
     glClear(GL_COLOR_BUFFER_BIT);
 
-    glBindVertexArray(VAO1);
 
     glUseProgram(shaderProgram);
 
+	glBindVertexArray(VAO1);
 	GLuint vertexVBO1;
 	glGenBuffers(1, &vertexVBO1);
 	glBindBuffer(GL_ARRAY_BUFFER, vertexVBO1);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices1), vertices1, GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
 	glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(GLfloat), (GLvoid*)0);
 	glEnableVertexAttribArray(0);
 
-	glBindVertexArray(VAO1);
+    glDrawArrays(GL_TRIANGLES, 0, 3 * iterations);
+	glBindVertexArray(0);
 
-    glDrawArrays(GL_TRIANGLES, 0, 3 * iterations1);
 
-
-	glBindVertexArray(VAO2);
-
-	GLuint vertexVBO2;
-	glGenBuffers(1, &vertexVBO2);
-	glBindBuffer(GL_ARRAY_BUFFER, vertexVBO2);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices2), vertices2, GL_STATIC_DRAW);
+	glBindVertexArray(VAO3);
+	GLuint vertexVBO3;
+	glGenBuffers(1, &vertexVBO3);
+	glBindBuffer(GL_ARRAY_BUFFER, vertexVBO3);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(verticesbox), verticesbox, GL_STATIC_DRAW);
 	glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(GLfloat), (GLvoid*)0);
 	glEnableVertexAttribArray(0);
 
-	glBindVertexArray(VAO2);
+	glDrawArrays(GL_LINES, 0, 4);
+	glDrawArrays(GL_LINES, 4, 4);
+	glDrawArrays(GL_LINES, 8, 4);
+	glDrawArrays(GL_LINES, 12, 4);
 
-	glDrawArrays(GL_TRIANGLES, 0, 3 * iterations2);
 
 	glBindVertexArray(0);
 
@@ -230,46 +337,47 @@ void framebufferSizeCallback(GLFWwindow* window, int width, int height) {
 
 }
 
-void rendersphere1(float radius1, int iterations1) {
+void rendersphere(int iterations, float radius, GLfloat vertices[], GLfloat colors[], float alpha, float beta) {
 
 	glGenVertexArrays(1, &VAO1);														
     glBindVertexArray(VAO1);
 
-    for (int i = 0; i < 6 * iterations1; i++) {
+    for (int i = 0; i < 6 * iterations; i++) {
         
-		vertices1[i] = 0;
-        vertices1[i + 1] = 0;
+		vertices[i] = 0;
+        vertices[i + 1] = 0;
 
-        vertices1[i + 2] = radius1 * cos(beta1);
-        vertices1[i + 3] = radius1 * sin(beta1);
+        vertices[i + 2] = radius * cos(alpha);
+        vertices[i + 3] = radius * sin(alpha);
 
-        vertices1[i + 4] = radius1 * cos(beta1 + alpha1);
-        vertices1[i + 5] = radius1 * sin(beta1 + alpha1);
+        vertices[i + 4] = radius * cos(alpha + beta);
+        vertices[i + 5] = radius * sin(alpha + beta);
 
         i = i + 5;
-        beta1 = beta1 + alpha1;
+
+		alpha = alpha + beta;
     
 	};
 
-    for (int i = 0; i < 9 * iterations1; i += 3) {
+    for (int i = 0; i < 9 * iterations; i += 3) {
 
-        colors1[i] = 1.0;
-        colors1[i + 1] = 0.0;
-        colors1[i + 2] = 0.0;
+        colors[i] = 1.0;
+        colors[i + 1] = 0.0;
+        colors[i + 2] = 0.0;
     
 	}
 
     GLuint vertexVBO1;															
     glGenBuffers(1, &vertexVBO1);													
     glBindBuffer(GL_ARRAY_BUFFER, vertexVBO1);										
-    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices1), vertices1, GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
     glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(GLfloat), (GLvoid*)0);
     glEnableVertexAttribArray(0);
 
     GLuint colorVBO1;
     glGenBuffers(1, &colorVBO1);
     glBindBuffer(GL_ARRAY_BUFFER, colorVBO1);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(colors1), colors1, GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(colors), colors, GL_STATIC_DRAW);
     glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), (GLvoid*)0);
     glEnableVertexAttribArray(1);
 
@@ -278,173 +386,115 @@ void rendersphere1(float radius1, int iterations1) {
  
 }
 
-void rendersphere2(float radius2, int iterations2) {
 
-	glGenVertexArrays(1, &VAO2);														
-    glBindVertexArray(VAO2);
+void renderbox(GLfloat verticesbox[], GLfloat colorbox[]) {
 
-    for (int i = 0; i < 6 * iterations2; i++) {
-        
-		vertices2[i] = 0;
-        vertices2[i + 1] = 0;
+	glGenVertexArrays(1, &VAO3);
+	glBindVertexArray(VAO3);
 
-        vertices2[i + 2] = radius2 * cos(beta2);
-        vertices2[i + 3] = radius2 * sin(beta2);
+	GLuint vertexVBO3;
+	glGenBuffers(1, &vertexVBO3);
+	glBindBuffer(GL_ARRAY_BUFFER, vertexVBO3);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(verticesbox[]), verticesbox[], GL_STATIC_DRAW);
+	glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(GLfloat), (GLvoid*)0);
+	glEnableVertexAttribArray(0);	
 
-        vertices2[i + 4] = radius2 * cos(beta2 + alpha2);
-        vertices2[i + 5] = radius2 * sin(beta2 + alpha2);
+	GLuint colorVBO3;
+	glGenBuffers(1, &colorVBO3);
+	glBindBuffer(GL_ARRAY_BUFFER, colorVBO3);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(colorbox), colorbox, GL_STATIC_DRAW);
+	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), (GLvoid*)0);
+	glEnableVertexAttribArray(1);
 
-        i = i + 5;
-        beta2 = beta2 + alpha2;
-    
-	};
+	glBindVertexArray(0);
 
-    for (int i = 0; i < 9 * iterations2; i += 3) {
-
-        colors2[i] = 0.0;
-        colors2[i + 1] = 0.0;
-        colors2[i + 2] = 1.0;
-    
-	}
-
-    GLuint vertexVBO2;															
-    glGenBuffers(1, &vertexVBO2);													
-    glBindBuffer(GL_ARRAY_BUFFER, vertexVBO2);										
-    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices2), vertices2, GL_STATIC_DRAW);
-    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(GLfloat), (GLvoid*)0);
-    glEnableVertexAttribArray(0);
-
-    GLuint colorVBO2;
-    glGenBuffers(1, &colorVBO2);
-    glBindBuffer(GL_ARRAY_BUFFER, colorVBO2);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(colors2), colors2, GL_STATIC_DRAW);
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), (GLvoid*)0);
-    glEnableVertexAttribArray(1);
-
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
-    glBindVertexArray(0);
- 
 }
 
-void updateobjectposition1() {
+void updateobjectposition(float radius, float mass, int iterations, float alpha, float beta, GLfloat vertices[],float coordinatesX, float coordinatesY, float velocityX, float velocityY, float accelerationX, float accelerationY, float deltaTime, float frameTime, GLfloat verticesbox[]) {
 
-	GLfloat totalTime1 = glfwGetTime();
-	deltatime1 = totalTime1 - frametime1;
-	frametime1 = totalTime1;
+	GLfloat totalTime = glfwGetTime();
+	deltaTime = totalTime - frameTime;
+	frameTime = totalTime;
 
-	ObjectPositionX1 = (ObjectPositionX1) + (ObjectVelocityX1 * deltatime1) + ((ObjectAccelerationX1 * deltatime1 * deltatime1)/2);
-	ObjectPositionY1 = (ObjectPositionY1) + (ObjectVelocityY1 * deltatime1) + ((ObjectAccelerationY1 * deltatime1 * deltatime1)/2);
+	coordinatesX = (coordinatesX) + (velocityX * deltaTime) + ((accelerationX * deltaTime * deltaTime)/2);
+	coordinatesY = (coordinatesY) + (velocityY * deltaTime) + ((accelerationX * deltaTime * deltaTime)/2);
 
-	ObjectVelocityX1 = (ObjectVelocityX1) + (ObjectAccelerationX1 * deltatime1);
-	ObjectVelocityY1 = (ObjectVelocityY1) + (ObjectAccelerationY1 * deltatime1);
+	velocityX = (velocityX) + (accelerationX * deltaTime);
+	velocityY = (velocityY) + (accelerationY * deltaTime);
 
-	if (ObjectPositionX1 + radius1 >= 1.0f || ObjectPositionX1 - radius1 <= -1.0f) {
-   
-   		ObjectVelocityX1 = -ObjectVelocityX1;
-   
-   	}
 
-	else if (ObjectPositionY1 + radius1 >= 1.0f || ObjectPositionY1 - radius1 <= -1.0f) {
-       
-	   	ObjectVelocityY1 = -ObjectVelocityY1;
-    
-	}
+	for(int i = 0; i < 6*iterations; i++) {
 
-	for(int i = 0; i < 6*iterations1; i++) {
+		vertices[i] = 0 + coordinatesX;
+        vertices[i + 1] = 0 + coordinatesY;
 
-		vertices1[i] = 0 + ObjectPositionX1;
-        vertices1[i + 1] = 0 + ObjectPositionY1;
+        vertices[i + 2] = radius * cos(alpha) + coordinatesX;
+        vertices[i + 3] = radius * sin(alpha) + coordinatesY;
 
-        vertices1[i + 2] = radius1 * cos(beta1) + ObjectPositionX1;
-        vertices1[i + 3] = radius1 * sin(beta1) + ObjectPositionY1;
-
-        vertices1[i + 4] = radius1 * cos(beta1 + alpha1) + ObjectPositionX1;
-        vertices1[i + 5] = radius1 * sin(beta1 + alpha1) + ObjectPositionY1;
+        vertices[i + 4] = radius * cos(alpha + beta) + coordinatesX;
+        vertices[i + 5] = radius * sin(alpha + beta) + coordinatesY;
 
         i = i + 5;
 
-        beta1 = beta1 + alpha1;
+        alpha = alpha + beta;
 	
 	}
 
-	bool colision = colisionDetection(ObjectPositionX1, ObjectPositionY1, radius1, ObjectPositionX2, ObjectPositionY2, radius2);
+	
+	bool colisionBorder = colisionBorderDetection(coordinatesX, coordinatesY, radius, verticesbox);
 
-	if (colision) {
 
-		ObjectVelocityX1 = -ObjectVelocityX1;
-		ObjectVelocityY1 = -ObjectVelocityY1;
+	if (colisionBorder) {
 
-		ObjectVelocityX2 = -ObjectVelocityX2;
-		ObjectVelocityY2 = -ObjectVelocityY2;
+		if (coordinatesX - radius < verticesbox[0] || coordinatesX + radius > verticesbox[2]) {
+
+			coordinatesX = -coordinatesX;
+
+		}
+
+		else if (coordinatesY - radius < verticesbox[1] || coordinatesY + radius > verticesbox[7]) {
+
+			coordinatesY = -coordinatesY;
+
+		}
+
+	}
+
+}
+
+bool colisionBorderDetection(float coordinatesX, float coordinatesY, float radius, GLfloat verticesbox[]) {
+
+	if (coordinatesX + radius > verticesbox[2] || coordinatesX - radius < verticesbox[0]) {
+
+		coordinatesX = -coordinatesX;
+		return true;
 
 	}	
-}
+	
+	else if (coordinatesY + radius > verticesbox[7] || coordinatesY - radius < verticesbox[1]) {
+    
+		coordinatesY = -coordinatesY;	
+		return true;
+    
+	} 
+	
+	else {
 
-void updateobjectposition2() {
-
-	GLfloat totalTime2 = glfwGetTime();
-	deltatime2 = totalTime2 - frametime2;
-	frametime2 = totalTime2;
-
-	ObjectPositionX2 = (ObjectPositionX2) + (ObjectVelocityX2 * deltatime2) + ((ObjectAccelerationX2 * deltatime2 * deltatime2)/2);
-	ObjectPositionY2 = (ObjectPositionY2) + (ObjectVelocityY2 * deltatime2) + ((ObjectAccelerationY2 * deltatime2 * deltatime2)/2);
-
-	ObjectVelocityX2 = (ObjectVelocityX2) + (ObjectAccelerationX2 * deltatime2);
-	ObjectVelocityY2 = (ObjectVelocityY2) + (ObjectAccelerationY2 * deltatime2);
-
-
-	if (ObjectPositionX1 + radius1 >= 1.0f || ObjectPositionX1 - radius1 <= -1.0f) {
-   
-   		ObjectVelocityX1 = -ObjectVelocityX1;
-   
-   	}
-
-	else if (ObjectPositionY1 + radius1 >= 1.0f || ObjectPositionY1 - radius1 <= -1.0f) {
-       
-	   	ObjectVelocityY1 = -ObjectVelocityY1;
+        return false;
     
 	}
 
-	for(int i = 0; i < 6*iterations2; i++) {
-
-		vertices2[i] = 0 + ObjectPositionX2;
-        vertices2[i + 1] = 0 + ObjectPositionY2;
-
-        vertices2[i + 2] = radius2 * cos(beta2) + ObjectPositionX2;
-        vertices2[i + 3] = radius2 * sin(beta2) + ObjectPositionY2;
-
-        vertices2[i + 4] = radius2 * cos(beta2 + alpha2) + ObjectPositionX2;
-        vertices2[i + 5] = radius2 * sin(beta2 + alpha2) + ObjectPositionY2;
-
-        i = i + 5;
-
-        beta2 = beta2 + alpha2;
-	
-	}
-
-	bool colision = colisionDetection(ObjectPositionX1, ObjectPositionY1, radius1, ObjectPositionX2, ObjectPositionY2, radius2);
-
-	if (colision) {
-
-		ObjectVelocityX1 = -ObjectVelocityX1;
-		ObjectVelocityY1 = -ObjectVelocityY1;
-
-		ObjectVelocityX2 = -ObjectVelocityX2;
-		ObjectVelocityY2 = -ObjectVelocityY2;
-
-	}
-	
 }
 
 bool colisionDetection(float ObjectPositionX1, float ObjectPositionY1, float radius1, float ObjectPositionX2, float ObjectPositionY2, float radius2) {
 
-	float dx = ObjectPositionX2 - ObjectPositionX1;
-	float dy = ObjectPositionY2 - ObjectPositionY1;
+	float dx = ObjectPositionX2 - ObjectPositionX1 - (radius2 - radius1);
+	float dy = ObjectPositionY2 - ObjectPositionY1 - (radius2 - radius1);
 	float distance = sqrt(pow(dx, 2) + pow(dy, 2));
 
 	float limit = radius1 + radius2;
 
-	if (distance <= limit) {
+	if (distance < limit) {
 
 		return true;
 
