@@ -156,8 +156,6 @@ int main() {
 
 	std::vector<GLuint> VAO;
 
-	GLuint VAO1, VAO2, VAO3;
-
 	GLuint shaderProgram;
 
     if (!glfwInit()) {
@@ -230,8 +228,13 @@ int main() {
     
 	}
 
-    glDeleteVertexArrays(1, &VAO1);
-	glDeleteVertexArrays(1, &VAO2);
+	for (int i = 0; i < 2; i++) {
+
+		glDeleteVertexArrays(1, &objects[i].VAO);
+
+	}
+
+	glDeleteVertexArrays(1, &box1.VAO);
     glDeleteProgram(shaderProgram);
 
     glfwTerminate();
