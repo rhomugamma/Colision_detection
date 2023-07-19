@@ -8,10 +8,6 @@ const float PI = 3.14159265358979323;
 
 const float g = 9.80665;
 
-GLuint VAO1, VAO2, VAO3;
-
-GLuint shaderProgram;
-
 const GLchar* vertexShaderSource = R"(
 
     #version 450 core
@@ -62,6 +58,7 @@ class object {
 		/* const static int colorsArraySize = 9 * iterations; */
 		GLfloat vertices[120];													
 		GLfloat colors[180];
+		GLuint VAO;
 
 		//Goberning characteristics
 		float coordinatesX;
@@ -130,17 +127,19 @@ class box {
 
 		};
 
+		GLuint VAO;
+
 };
 
 std::vector<object> init(std::vector<object> objects, box box1);
 
-void display(int iterations, GLfloat vertices[], GLfloat verticesbox[]);
+void display(int iterations, GLfloat vertices[], int verticesSize, GLfloat verticesbox[], int verticesboxSize, GLuint shaderProgram, GLuint VAO, GLuint boxVAO);
 
 void framebufferSizeCallback(GLFWwindow* window, int width, int height);
 
-void rendersphere(int iterations, float radius, GLfloat vertices[], GLfloat colors[], float alpha, float beta);
+void rendersphere(int iterations, float radius, GLfloat vertices[], int verticesSize, GLfloat colors[], int colorsSize, float alpha, float beta, GLuint VAO);
 
-void renderbox(GLfloat verticesbox[], GLfloat colorsbox[]);
+void renderbox(GLfloat verticesbox[], int verticesboxSize, GLfloat colorbox[], int colorsboxSize, GLuint VAO);
 
 void updateobjectposition(float radius, float mass, int iterations, float alpha, float beta, GLfloat vertices[],float coordinatesX, float coordinatesY, float velocityX, float velocityY, float accelerationX, float accelerationY, float deltaTime, float totalTime, GLfloat verticesbox[]);
 
@@ -154,6 +153,12 @@ int main() {
 	std::vector<object> objects;
 
 	box box1;
+
+	std::vector<GLuint> VAO;
+
+	GLuint VAO1, VAO2, VAO3;
+
+	GLuint shaderProgram;
 
     if (!glfwInit()) {
 
@@ -217,7 +222,7 @@ int main() {
 		for (int i = 0; i < 2; i++) {
 	
 			updateobjectposition(objects[i].radius, objects[i].mass, objects[i].iterations, objects[i].alpha, objects[i].beta, objects[i].vertices, objects[i].coordinatesX, objects[i].coordinatesY, objects[i].velocityX, objects[i].velocityY, objects[i].accelerationX, objects[i].accelerationY, objects[i].deltaTime, objects[i].frameTime, box1.verticesbox);
-			display(objects[i].iterations, objects[i].vertices, box1.verticesbox);
+			display(objects[i].iterations, objects[i].vertices, sizeof(objects[i].vertices), box1.verticesbox, sizeof(box1.verticesbox), shaderProgram, objects[i].VAO, box1.VAO);
 
 		}
 
@@ -282,18 +287,18 @@ std::vector<object> init(std::vector<object> objects, box box1) {
 
 	for (int i = 0; i < 2; i++) {
 
-		rendersphere(objects[i].iterations, objects[i].radius, objects[i].vertices, objects[i].colors, objects[i].alpha, objects[i].beta);
+		rendersphere(objects[i].iterations, objects[i].radius, objects[i].vertices, sizeof(objects[i].vertices), objects[i].colors, sizeof(objects[i].colors), objects[i].alpha, objects[i].beta, objects[i].VAO);
 
 	}
 
 
-	renderbox(box1.verticesbox, box1.colorbox);
+	renderbox(box1.verticesbox, sizeof(box1.verticesbox), box1.colorbox, sizeof(box1.colorbox), box1.VAO);
 
 	return objects;
 
 }
 
-void display(int iterations, GLfloat vertices, GLfloat verticesbox) {
+void display(int iterations, GLfloat vertices[], int verticesSize, GLfloat verticesbox[], int verticesboxSize, GLuint shaderProgram, GLuint VAO, GLuint boxVAO) {
 
 	glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
     glClear(GL_COLOR_BUFFER_BIT);
@@ -301,11 +306,11 @@ void display(int iterations, GLfloat vertices, GLfloat verticesbox) {
 
     glUseProgram(shaderProgram);
 
-	glBindVertexArray(VAO1);
-	GLuint vertexVBO1;
-	glGenBuffers(1, &vertexVBO1);
-	glBindBuffer(GL_ARRAY_BUFFER, vertexVBO1);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+	glBindVertexArray(VAO);
+	GLuint vertexVBO;
+	glGenBuffers(1, &vertexVBO);
+	glBindBuffer(GL_ARRAY_BUFFER, vertexVBO);
+	glBufferData(GL_ARRAY_BUFFER, verticesSize, vertices, GL_STATIC_DRAW);
 	glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(GLfloat), (GLvoid*)0);
 	glEnableVertexAttribArray(0);
 
@@ -313,11 +318,11 @@ void display(int iterations, GLfloat vertices, GLfloat verticesbox) {
 	glBindVertexArray(0);
 
 
-	glBindVertexArray(VAO3);
-	GLuint vertexVBO3;
-	glGenBuffers(1, &vertexVBO3);
-	glBindBuffer(GL_ARRAY_BUFFER, vertexVBO3);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(verticesbox), verticesbox, GL_STATIC_DRAW);
+	glBindVertexArray(boxVAO);
+	GLuint vertexboxVBO;
+	glGenBuffers(1, &vertexboxVBO);
+	glBindBuffer(GL_ARRAY_BUFFER, vertexboxVBO);
+	glBufferData(GL_ARRAY_BUFFER, verticesboxSize, verticesbox, GL_STATIC_DRAW);
 	glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(GLfloat), (GLvoid*)0);
 	glEnableVertexAttribArray(0);
 
@@ -337,10 +342,10 @@ void framebufferSizeCallback(GLFWwindow* window, int width, int height) {
 
 }
 
-void rendersphere(int iterations, float radius, GLfloat vertices[], GLfloat colors[], float alpha, float beta) {
+void rendersphere(int iterations, float radius, GLfloat vertices[], int verticesSize, GLfloat colors[], int colorsSize, float alpha, float beta, GLuint VAO) {
 
-	glGenVertexArrays(1, &VAO1);														
-    glBindVertexArray(VAO1);
+	glGenVertexArrays(1, &VAO);														
+    glBindVertexArray(VAO);
 
     for (int i = 0; i < 6 * iterations; i++) {
         
@@ -367,17 +372,17 @@ void rendersphere(int iterations, float radius, GLfloat vertices[], GLfloat colo
     
 	}
 
-    GLuint vertexVBO1;															
-    glGenBuffers(1, &vertexVBO1);													
-    glBindBuffer(GL_ARRAY_BUFFER, vertexVBO1);										
-    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+    GLuint vertexVBO;															
+    glGenBuffers(1, &vertexVBO);													
+    glBindBuffer(GL_ARRAY_BUFFER, vertexVBO);										
+    glBufferData(GL_ARRAY_BUFFER, verticesSize, vertices, GL_STATIC_DRAW);
     glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(GLfloat), (GLvoid*)0);
     glEnableVertexAttribArray(0);
 
-    GLuint colorVBO1;
-    glGenBuffers(1, &colorVBO1);
-    glBindBuffer(GL_ARRAY_BUFFER, colorVBO1);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(colors), colors, GL_STATIC_DRAW);
+    GLuint colorVBO;
+    glGenBuffers(1, &colorVBO);
+    glBindBuffer(GL_ARRAY_BUFFER, colorVBO);
+    glBufferData(GL_ARRAY_BUFFER, colorsSize, colors, GL_STATIC_DRAW);
     glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), (GLvoid*)0);
     glEnableVertexAttribArray(1);
 
@@ -387,22 +392,22 @@ void rendersphere(int iterations, float radius, GLfloat vertices[], GLfloat colo
 }
 
 
-void renderbox(GLfloat verticesbox[], GLfloat colorbox[]) {
+void renderbox(GLfloat verticesbox[], int verticesboxSize, GLfloat colorbox[], int colorboxSize, GLuint boxVAO) {
 
-	glGenVertexArrays(1, &VAO3);
-	glBindVertexArray(VAO3);
+	glGenVertexArrays(1, &boxVAO);
+	glBindVertexArray(boxVAO);
 
-	GLuint vertexVBO3;
-	glGenBuffers(1, &vertexVBO3);
-	glBindBuffer(GL_ARRAY_BUFFER, vertexVBO3);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(verticesbox[]), verticesbox[], GL_STATIC_DRAW);
+	GLuint vertexboxVBO;
+	glGenBuffers(1, &vertexboxVBO);
+	glBindBuffer(GL_ARRAY_BUFFER, vertexboxVBO);
+	glBufferData(GL_ARRAY_BUFFER, verticesboxSize, verticesbox, GL_STATIC_DRAW);
 	glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(GLfloat), (GLvoid*)0);
 	glEnableVertexAttribArray(0);	
 
-	GLuint colorVBO3;
-	glGenBuffers(1, &colorVBO3);
-	glBindBuffer(GL_ARRAY_BUFFER, colorVBO3);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(colorbox), colorbox, GL_STATIC_DRAW);
+	GLuint colorboxVBO;
+	glGenBuffers(1, &colorboxVBO);
+	glBindBuffer(GL_ARRAY_BUFFER, colorboxVBO);
+	glBufferData(GL_ARRAY_BUFFER, colorboxSize, colorbox, GL_STATIC_DRAW);
 	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), (GLvoid*)0);
 	glEnableVertexAttribArray(1);
 
