@@ -245,21 +245,19 @@ class object {
 
 				for (int j = i + 1; j < objects.size(); j++) {
 
-					float dx = objects[i].coordinatesX - objects[j].coordinatesX - (objects[i].radius - objects[j].radius);
-					float dy = objects[i].coordinatesY - objects[j].coordinatesY - (objects[i].radius - objects[j].radius);
-					float distance = sqrt((dx * dx) + (dy * dy));
+				float dx = objects[j].coordinatesX - objects[i].coordinatesX - (objects[j].radius - objects[i].radius);
+				float dy = objects[j].coordinatesY - objects[i].coordinatesY - (objects[j].radius - objects[i].radius);
+				float distance = sqrt((dx * dx) + (dy * dy));
 
-					float limit = objects[j].radius + objects[i].radius;
+				float limit = objects[i].radius + objects[j].radius;
 
-					if (distance <= limit) {
+				if (distance <= limit) {
 
-						velocityX = -velocityX;
-						velocityY = -velocityY;
-
-					}
+					velocityX = -velocityX;
 
 				}
 
+				}
 			}
 
 		}
