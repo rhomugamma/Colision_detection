@@ -125,7 +125,7 @@ class object {
 		float linearMomentumModule = sqrt((linearMomentumX * linearMomentumX) + (linearMomentumY * linearMomentumY));
  		float momentInertia = (mass * (radius * radius)) / (2);
 
-		float kinetickEnergy = ((1/2) + (mass) + (velocityModule * velocityModule)) + ((1/2) + (momentInertia) + (angularVelocityZ * angularVelocityZ)); 
+		float kinetickEnergy = ((0.5) + (mass) + (velocityModule * velocityModule)) + ((0.5) + (momentInertia) + (angularVelocityZ * angularVelocityZ)); 
 		float potentialEnergy = (mass) * (g) * (coordinatesY + 0.5);
 
 		//Time characteristics
@@ -198,6 +198,7 @@ class object {
  
 		}
 
+
 		void renderObject() {
 
 	        glGenVertexArrays(1, &VAO);
@@ -220,7 +221,7 @@ class object {
         	glBindVertexArray(0);
     	
 		}
-	
+
 
 		void borderCollision(box box1) {
 
@@ -239,25 +240,30 @@ class object {
 
 		}	
 
-		void objectCollision(std::vector<object> objects) {
+
+		void objectCollision(std::vector<object>& objects) {
 
 			for (int i = 0; i < objects.size(); i++) {
 
 				for (int j = i + 1; j < objects.size(); j++) {
 
-				float dx = objects[j].coordinatesX - objects[i].coordinatesX - (objects[j].radius - objects[i].radius);
-				float dy = objects[j].coordinatesY - objects[i].coordinatesY - (objects[j].radius - objects[i].radius);
-				float distance = sqrt((dx * dx) + (dy * dy));
+					float dx = objects[j].coordinatesX - objects[i].coordinatesX - (objects[j].radius - objects[i].radius);
+					float dy = objects[j].coordinatesY - objects[i].coordinatesY - (objects[j].radius - objects[i].radius);
+					float distance = sqrt((dx * dx) + (dy * dy));
 
-				float limit = objects[i].radius + objects[j].radius;
+					float limit = objects[i].radius + objects[j].radius;
 
-				if (distance <= limit) {
+					if (distance <= limit) {
 
-					velocityX = -velocityX;
+						float velX = objects[i].velocityX;
+
+						objects[i].velocityX = ((objects[i].mass * objects[i].velocityX) + (objects[j].mass * objects[j].velocityX) - (objects[j].mass * 1 * (objects[i].velocityX - objects[j].velocityX))) / (objects[i].mass + objects[j].mass);
+						objects[j].velocityX = ((objects[i].mass * velX) + (objects[j].mass * objects[j].velocityX) + (objects[i].mass * 1 * (velX - objects[j].velocityX))) / (objects[i].mass + objects[j].mass);
+
+					}	
 
 				}
 
-				}
 			}
 
 		}
@@ -398,14 +404,14 @@ void init(std::vector<object>& objects, box box1) {
 
 	objects.push_back(object());
 
-	objects[0].radius = 0.01;						//0.001538
+	objects[0].radius = 0.15;						//0.001538
 	objects[0].mass = 5;
 	objects[0].color1 = 1.0;
 	objects[0].color2 = 0.0;
 	objects[0].color3 = 0.0;
 
-	objects[0].coordinatesX = -0.97;
-	objects[0].coordinatesY = -0.97;
+	objects[0].coordinatesX = -0.8;
+	objects[0].coordinatesY = -0.8;
 
 	objects[0].velocityX =  0.5;
 	objects[0].velocityY =  0.4;
@@ -425,14 +431,14 @@ void init(std::vector<object>& objects, box box1) {
 
 	objects.push_back(object());
 
-	objects[1].radius = 0.01;
-	objects[1].mass = 5;
+	objects[1].radius = 0.15;
+	objects[1].mass = 10;
 	objects[1].color1 = 0.0;
 	objects[1].color2 = 0.0;
 	objects[1].color3 = 1.0;
 
-	objects[1].coordinatesX =  0.97;
-	objects[1].coordinatesY = -0.97;
+	objects[1].coordinatesX =  0.8;
+	objects[1].coordinatesY = -0.8;
 
 	objects[1].velocityX = -0.5;
 	objects[1].velocityY =  0.4;
@@ -500,4 +506,3 @@ void renderbox(box box1) {
 	glBindVertexArray(0);
 
 }
-
