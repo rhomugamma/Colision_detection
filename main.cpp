@@ -3,7 +3,6 @@
 #include <iostream>
 #include <math.h>
 #include <vector>
-#include <cstdlib>
 
 const float PI = 3.14159265358979323;
 
