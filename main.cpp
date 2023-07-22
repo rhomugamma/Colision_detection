@@ -166,7 +166,7 @@ class object {
 		}
 
 
-		void updateObjectPosition(std::vector<object> objects, box box1) {
+		void updateObjectPosition(std::vector<object>& objects, box box1) {
 
 		GLfloat totalTime = glfwGetTime();
 		deltaTime = totalTime - frameTime;
@@ -198,7 +198,6 @@ class object {
 			};
  
 		}
-
 
 		void renderObject() {
 
@@ -245,15 +244,15 @@ class object {
 
 			for (int i = 0; i < objects.size(); i++) {
 
-				for (int j = 0; j < objects.size(); j++) {
+				for (int j = i + 1; j < objects.size(); j++) {
 
-					float dx = objects[j].coordinatesX - objects[i].coordinatesX - (objects[j].radius - objects[i].radius);
-					float dy = objects[j].coordinatesY - objects[i].coordinatesY - (objects[j].radius - objects[i].radius);
+					float dx = objects[i].coordinatesX - objects[j].coordinatesX - (objects[i].radius - objects[j].radius);
+					float dy = objects[i].coordinatesY - objects[j].coordinatesY - (objects[i].radius - objects[j].radius);
 					float distance = sqrt((dx * dx) + (dy * dy));
 
 					float limit = objects[j].radius + objects[i].radius;
 
-					if (distance < limit) {
+					if (distance <= limit) {
 
 						velocityX = -velocityX;
 						velocityY = -velocityY;
