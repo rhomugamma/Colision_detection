@@ -3,6 +3,7 @@
 #include <iostream>
 #include <math.h>
 #include <vector>
+#include <random>
 
 const float PI = 3.14159265358979323;
 
@@ -171,16 +172,17 @@ class object {
 		deltaTime = totalTime - frameTime;
 		frameTime = totalTime;
 
+		borderCollision(box1);
+
+		objectCollision(objects);
+
 		coordinatesX = (coordinatesX) + (velocityX * deltaTime) + ((1/2) * (accelerationX) * (deltaTime * deltaTime));	
 		coordinatesY = (coordinatesY) + (velocityY * deltaTime) + ((1/2) * (accelerationY) * (deltaTime * deltaTime));
 
 		velocityX = (velocityX) + ((accelerationX) * (deltaTime));
 		velocityY = (velocityY) + ((accelerationY) * (deltaTime));
 
-		borderCollision(box1);
-
-		objectCollision(objects);
-
+		
 		for (int i = 0; i < 6 * iterations; i += 6) {
 
 				vertices[i] = coordinatesX;
@@ -247,20 +249,20 @@ class object {
 
 				for (int j = i + 1; j < objects.size(); j++) {
 
-					float dx = objects[j].coordinatesX - objects[i].coordinatesX - (objects[j].radius - objects[i].radius);
-					float dy = objects[j].coordinatesY - objects[i].coordinatesY - (objects[j].radius - objects[i].radius);
-					float distance = sqrt((dx * dx) + (dy * dy));
+						float dx = objects[j].coordinatesX - objects[i].coordinatesX - (objects[j].radius - objects[i].radius);
+						float dy = objects[j].coordinatesY - objects[i].coordinatesY - (objects[j].radius - objects[i].radius);
+						float distance = sqrt((dx * dx) + (dy * dy));
 
-					float limit = objects[i].radius + objects[j].radius;
+						float limit = objects[i].radius + objects[j].radius;
 
-					if (distance <= limit) {
+						if (distance <= limit) {
 
-						float velX = objects[i].velocityX;
+							float velX = objects[i].velocityX;
 
-						objects[i].velocityX = ((objects[i].mass * objects[i].velocityX) + (objects[j].mass * objects[j].velocityX) - (objects[j].mass * 1 * (objects[i].velocityX - objects[j].velocityX))) / (objects[i].mass + objects[j].mass);
-						objects[j].velocityX = ((objects[i].mass * velX) + (objects[j].mass * objects[j].velocityX) + (objects[i].mass * 1 * (velX - objects[j].velocityX))) / (objects[i].mass + objects[j].mass);
-
-					}	
+							objects[i].velocityX = ((objects[i].mass * objects[i].velocityX) + (objects[j].mass * objects[j].velocityX) - (objects[j].mass * 1 * (objects[i].velocityX - objects[j].velocityX))) / (objects[i].mass + objects[j].mass);
+							objects[j].velocityX = ((objects[i].mass * velX) + (objects[j].mass * objects[j].velocityX) + (objects[i].mass * 1 * (velX - objects[j].velocityX))) / (objects[i].mass + objects[j].mass);
+	
+						}	
 
 				}
 
@@ -323,6 +325,7 @@ void rendersphere(object& obt);
 void renderbox(box box1);
 
 void updateObjectPosition(object& obt);
+
 
 int main() {
 
@@ -402,59 +405,42 @@ int main() {
 
 void init(std::vector<object>& objects, box box1) {
 
-	objects.push_back(object());
+	float xposition = -0.9;
+	float yposition = -0.9;
 
-	objects[0].radius = 0.15;						//0.001538
-	objects[0].mass = 5;
-	objects[0].color1 = 1.0;
-	objects[0].color2 = 0.0;
-	objects[0].color3 = 0.0;
-
-	objects[0].coordinatesX = -0.8;
-	objects[0].coordinatesY = -0.8;
-
-	objects[0].velocityX =  0.5;
-	objects[0].velocityY =  0.4;
-
-	objects[0].accelerationX = 0.0;
-	objects[0].accelerationY = 0.0;
-
-	objects[0].angularVelocityZ = 0.0;
-
-	objects[0].angularAccelerationZ = 0.0;
-
-	objects[0].deltaTime = 0.0;
-	objects[0].frameTime = 0.0;
-
-	objects[0].renderSphereObject();
+	for (int i = 0; i < 10; i++) {
 
 
-	objects.push_back(object());
+		objects.push_back(object());
 
-	objects[1].radius = 0.15;
-	objects[1].mass = 10;
-	objects[1].color1 = 0.0;
-	objects[1].color2 = 0.0;
-	objects[1].color3 = 1.0;
+		objects[i].radius = 0.01;						//0.001538
+		objects[i].mass = 5;
+		objects[i].color1 = 1.0;
+		objects[i].color2 = 0.0;
+		objects[i].color3 = 0.0;
 
-	objects[1].coordinatesX =  0.8;
-	objects[1].coordinatesY = -0.8;
+		objects[i].coordinatesX = xposition;
+		objects[i].coordinatesY = yposition;
+	
+		objects[i].velocityX =  0.5;
+		objects[i].velocityY =  0.4;
 
-	objects[1].velocityX = -0.5;
-	objects[1].velocityY =  0.4;
+		objects[i].accelerationX = 0.0;
+		objects[i].accelerationY = 0.0;
 
-	objects[1].accelerationX = 0.0;
-	objects[1].accelerationY = 0.0;
+		objects[i].angularVelocityZ = 0.0;
 
-	objects[1].angularVelocityZ = 0.0;
+		objects[i].angularAccelerationZ = 0.0;
 
-	objects[1].angularAccelerationZ = 0.0;
+		objects[i].deltaTime = 0.0;
+		objects[i].frameTime = 0.0;
 
-	objects[1].deltaTime = 0.0;
-	objects[1].frameTime = 0.0;	
+		objects[i].renderSphereObject();
+					  
+		yposition += 0.1;
 
-	objects[1].renderSphereObject();
-
+	}
+	
 }
 
 void display(std::vector<object>& objects, box box1, GLFWwindow* window) {
