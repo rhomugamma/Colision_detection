@@ -15,36 +15,38 @@ class box {
 
 	public:
 
+		float mass = 10000000000;
+
 		GLfloat verticesbox[16] = {
 
-			-0.99, -0.99,
-			 0.99, -0.99,
+			-1.0, -1.0,
+			 1.0, -1.0,
 
-			 0.99, -0.99,
-			 0.99,  0.99,
+			 1.0, -1.0,
+			 1.0,  1.0,
 
-			 0.99, 0.99,
-			-0.99, 0.99,
+			 1.0, 1.0,
+			-1.0, 1.0,
 
-			-0.99, 0.99,
-			-0.99, -0.99
+			-1.0, 1.0,
+			-1.0, -1.0
 
 		};
 
 
 		GLfloat colorbox[24] {
 
-			0.0f, 1.0f, 0.0f,
-			0.0f, 1.0f, 0.0f,
+			0.0f, 0.0f, 0.0f,
+			0.0f, 0.0f, 0.0f,
 
-			0.0f, 1.0f, 0.0f,
-			0.0f, 1.0f, 0.0f,
+			0.0f, 0.0f, 0.0f,
+			0.0f, 0.0f, 0.0f,
 
-			0.0f, 1.0f, 0.0f,
-			0.0f, 1.0f, 0.0f,
-	
-			0.0f, 1.0f, 0.0f,
-			0.0f, 1.0f, 0.0f,
+			0.0f, 0.0f, 0.0f,
+			0.0f, 0.0f, 0.0f,
+
+			0.0f, 0.0f, 0.0f,
+			0.0f, 0.0f, 0.0f,
 
 		};
 
@@ -92,6 +94,7 @@ class object {
 		float color1;
 		float color2;
 		float color3;
+		float e;
 
 		//Rendering properties
 		int iterations = 15;
@@ -227,16 +230,19 @@ class object {
 
 		void borderCollision(box box1) {
 
+
 			if (coordinatesX + radius > box1.verticesbox[2] || coordinatesX - radius < box1.verticesbox[0]) {
 
-				velocityX = -velocityX;
+				/* velocityX = -velocityX; */
+				velocityX =	((velocityX) * ((mass) - (box1.mass * e))) / (mass + box1.mass);
 
 			}
 				
 				
 			else if (coordinatesY + radius > box1.verticesbox[7] || coordinatesY - radius < box1.verticesbox[1]) {
 
-				velocityY = -velocityY;
+				/* velocityY = -velocityY; */	
+				velocityY =	((velocityY) * ((mass) - (box1.mass * e))) / (mass + box1.mass);
 
 			}
 
@@ -259,30 +265,29 @@ class object {
 
 							/* float velX = objects[i].velocityX; */
 
-							/* objects[i].velocityX = ((objects[i].mass * objects[i].velocityX) + (objects[j].mass * objects[j].velocityX) - (objects[j].mass * 1 * (objects[i].velocityX - objects[j].velocityX))) / (objects[i].mass + objects[j].mass); */
-							/* objects[j].velocityX = ((objects[i].mass * velX) + (objects[j].mass * objects[j].velocityX) + (objects[i].mass * 1 * (velX - objects[j].velocityX))) / (objects[i].mass + objects[j].mass); */
-							float nx = dx / distance;
-                float ny = dy / distance;
+							/* velocityX = ((objects[i].mass * objects[i].velocityX) + (objects[j].mass * objects[j].velocityX) - (objects[j].mass * objects[i].e * (objects[i].velocityX - objects[j].velocityX))) / (objects[i].mass + objects[j].mass); */
+							/* objects[j].velocityX = ((objects[i].mass * velX) + (objects[j].mass * objects[j].velocityX) + (objects[i].mass * objects[j].e * (velX - objects[j].velocityX))) / (objects[i].mass + objects[j].mass); */
 
-                // Calculate the relative velocity along the normal vector
-                float relativeVelocityX = objects[j].velocityX - objects[i].velocityX;
-                float relativeVelocityY = objects[j].velocityY - objects[i].velocityY;
-                float dotProduct = relativeVelocityX * nx + relativeVelocityY * ny;
+							float normalX = dx / distance;
+			                float normalY = dy / distance;
 
-                // Update the velocities of the colliding objects based on the collision response
-                objects[i].velocityX += nx * dotProduct;
-                objects[i].velocityY += ny * dotProduct;
-                objects[j].velocityX -= nx * dotProduct;
-                objects[j].velocityY -= ny * dotProduct;
-	
+                			float relativeVelocityX = objects[j].velocityX - objects[i].velocityX;
+               		 		float relativeVelocityY = objects[j].velocityY - objects[i].velocityY;
+                			float dotProduct = (relativeVelocityX * normalX) + (relativeVelocityY * normalY);
+
+	            		    objects[i].velocityX += normalX * dotProduct;
+    	            		objects[i].velocityY += normalY * dotProduct;
+        	        		objects[j].velocityX -= normalX * dotProduct;
+            	    		objects[j].velocityY -= normalY * dotProduct;
+
 						}	
 
 				}
 
+
 			}
 
 		}
-
 
 	    void cleanup() {
 
@@ -292,6 +297,94 @@ class object {
 
 };
 
+class sample {
+	
+	public:
+
+		float radius = 0.15;
+		float mass = 10000000000;
+		float weight = (mass) * (g);
+
+		//Rendering properties
+		int iterations = 60;
+		float alpha = (360 / 60) * (2 * PI / 360);
+		float beta = alpha;
+		/* const static int verticesArraySize = 6 * iterations; */
+		/* const static int colorsArraySize = 9 * iterations; */
+		GLfloat vertices[360];													
+		GLfloat colors[540];
+		GLuint VAO;
+
+		//Goberning characteristics
+		float coordinatesX = -0.75;
+		float coordinatesY = -0.00;
+
+		//Time characteristics
+		float deltaTime;
+		float frameTime;
+
+		void renderSampleObject() {
+
+			GLfloat totalTime = glfwGetTime();
+			deltaTime = totalTime - frameTime;
+			frameTime = totalTime;
+
+
+			for (int i = 0; i < 6 * iterations; i += 6) {
+
+				vertices[i] = coordinatesX;
+        		vertices[i + 1] = coordinatesY;
+
+		        vertices[i + 2] = radius * cos(alpha) + coordinatesX;
+ 		       	vertices[i + 3] = radius * sin(alpha) + coordinatesY;
+
+ 		       	vertices[i + 4] = radius * cos(alpha + beta) + coordinatesX;
+        		vertices[i + 5] = radius * sin(alpha + beta) + coordinatesY;
+
+				alpha += beta;
+
+			};
+
+    		for (int i = 0; i < 9 * iterations; i += 3) {
+
+		        colors[i] = 1.0;
+       			colors[i + 1] = 1.0;
+     		    colors[i + 2] = 1.0;
+    
+			};
+
+		}
+	
+		void renderObject() {
+
+	        glGenVertexArrays(1, &VAO);
+    	    glBindVertexArray(VAO);
+
+	        GLuint vertexVBO;
+        	glGenBuffers(1, &vertexVBO);
+        	glBindBuffer(GL_ARRAY_BUFFER, vertexVBO);
+        	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+        	glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(GLfloat), (GLvoid*)0);
+	        glEnableVertexAttribArray(0);
+
+        	GLuint colorVBO;
+        	glGenBuffers(1, &colorVBO);
+        	glBindBuffer(GL_ARRAY_BUFFER, colorVBO);
+        	glBufferData(GL_ARRAY_BUFFER, sizeof(colors), colors, GL_STATIC_DRAW);
+       		glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), (GLvoid*)0);
+     	   	glEnableVertexAttribArray(1);
+
+        	glBindVertexArray(0);
+    	
+		}
+
+	    void cleanup() {
+
+    	    glDeleteVertexArrays(1, &VAO);
+    
+		}
+
+};
 
 const GLchar* vertexShaderSource = R"(
 
@@ -327,15 +420,17 @@ const GLchar* fragmentShaderSource = R"(
 )";
 
 
-void init(std::vector<object>& objects, box box1);
+void init(std::vector<object>& objects, sample& sample1);
 
-void display(std::vector<object>& objects, box box1, GLFWwindow* window);
+void display(std::vector<object>& objects, box box1, sample& sample1, GLFWwindow* window);
 
 void framebufferSizeCallback(GLFWwindow* window, int width, int height);
 
 void rendersphere(object& obt);
 
 void renderbox(box box1);
+
+void rendersample(sample& sample1);
 
 void updateObjectPosition(object& obt);
 
@@ -345,6 +440,8 @@ int main() {
 	std::vector<object> objects;
 
 	box box1;
+
+	sample sample1;
 
 
     if (!glfwInit()) {
@@ -400,12 +497,12 @@ int main() {
     glDeleteShader(vertexShader);
     glDeleteShader(fragmentShader);
 
-    init(objects, box1);
+    init(objects, sample1);
 
     while (!glfwWindowShouldClose(window)) {
 
         glfwPollEvents();
-		display(objects, box1, window);
+		display(objects, box1, sample1, window);
     
 	}
 
@@ -416,35 +513,35 @@ int main() {
     return 0;
 }
 
-void init(std::vector<object>& objects, box box1) {
+void init(std::vector<object>& objects, sample& sample1) {
 
-	float xposition = -0.9;
-	float yposition = -0.9;
-	float numberObjects = 100;
-	float height = 1.75;
+	float xposition = -0.0;
+	float yposition = -0.0;
+	float yprime = yposition;
+	float numberObjects = 1;
+	float height = 3.94;
 	float increase = height / numberObjects;
-
 	
 
 	for (int i = 0; i < numberObjects; i++) {
 
-
 		objects.push_back(object());
 
-		objects[i].radius = 0.001538;						//0.001538
-		objects[i].mass = 5;
+		objects[i].radius = 0.01;						//0.001538
+		objects[i].mass = 4.809 * pow(10, -23);
 		objects[i].color1 = 1.0;
 		objects[i].color2 = 0.0;
 		objects[i].color3 = 0.0;
+		objects[i].e = 0.85;
 
 		objects[i].coordinatesX = xposition;
 		objects[i].coordinatesY = yposition;
 	
-		objects[i].velocityX =  0.2;
-		objects[i].velocityY =  0.2;
+		objects[i].velocityX = 0.0;
+		objects[i].velocityY = 0.0;
 
 		objects[i].accelerationX = 0.0;
-		objects[i].accelerationY = 0.0;
+		objects[i].accelerationY = -1.62;
 
 		objects[i].angularVelocityZ = 0.0;
 
@@ -455,13 +552,25 @@ void init(std::vector<object>& objects, box box1) {
 
 		objects[i].renderSphereObject();
 					  
-		yposition += increase;
+		if ((yposition + increase) < 1.0) {
+			
+			yposition += increase;
+
+		}
+
+		else {
+
+			yposition = yprime;
+
+		}
 
 	}
+
+	sample1.renderSampleObject();
 	
 }
 
-void display(std::vector<object>& objects, box box1, GLFWwindow* window) {
+void display(std::vector<object>& objects, box box1, sample& sample1, GLFWwindow* window) {
 
 
 	glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
@@ -479,6 +588,8 @@ void display(std::vector<object>& objects, box box1, GLFWwindow* window) {
 	}
 
 	renderbox(box1);
+
+	rendersample(sample1);
 
 	glfwSwapBuffers(window);
 
@@ -507,6 +618,15 @@ void renderbox(box box1) {
 	glDrawArrays(GL_LINES, 4, 4);
 	glDrawArrays(GL_LINES, 8, 4);
 	glDrawArrays(GL_LINES, 12, 4);
+	glBindVertexArray(0);
+
+}
+
+void rendersample(sample& sample1) {
+
+	sample1.renderObject();
+	glBindVertexArray(sample1.VAO);
+	glDrawArrays(GL_TRIANGLES, 0, 3 * sample1.iterations);
 	glBindVertexArray(0);
 
 }
