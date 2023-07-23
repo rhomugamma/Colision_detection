@@ -257,10 +257,23 @@ class object {
 
 						if (distance <= limit) {
 
-							float velX = objects[i].velocityX;
+							/* float velX = objects[i].velocityX; */
 
-							objects[i].velocityX = ((objects[i].mass * objects[i].velocityX) + (objects[j].mass * objects[j].velocityX) - (objects[j].mass * 1 * (objects[i].velocityX - objects[j].velocityX))) / (objects[i].mass + objects[j].mass);
-							objects[j].velocityX = ((objects[i].mass * velX) + (objects[j].mass * objects[j].velocityX) + (objects[i].mass * 1 * (velX - objects[j].velocityX))) / (objects[i].mass + objects[j].mass);
+							/* objects[i].velocityX = ((objects[i].mass * objects[i].velocityX) + (objects[j].mass * objects[j].velocityX) - (objects[j].mass * 1 * (objects[i].velocityX - objects[j].velocityX))) / (objects[i].mass + objects[j].mass); */
+							/* objects[j].velocityX = ((objects[i].mass * velX) + (objects[j].mass * objects[j].velocityX) + (objects[i].mass * 1 * (velX - objects[j].velocityX))) / (objects[i].mass + objects[j].mass); */
+							float nx = dx / distance;
+                float ny = dy / distance;
+
+                // Calculate the relative velocity along the normal vector
+                float relativeVelocityX = objects[j].velocityX - objects[i].velocityX;
+                float relativeVelocityY = objects[j].velocityY - objects[i].velocityY;
+                float dotProduct = relativeVelocityX * nx + relativeVelocityY * ny;
+
+                // Update the velocities of the colliding objects based on the collision response
+                objects[i].velocityX += nx * dotProduct;
+                objects[i].velocityY += ny * dotProduct;
+                objects[j].velocityX -= nx * dotProduct;
+                objects[j].velocityY -= ny * dotProduct;
 	
 						}	
 
@@ -407,13 +420,18 @@ void init(std::vector<object>& objects, box box1) {
 
 	float xposition = -0.9;
 	float yposition = -0.9;
+	float numberObjects = 100;
+	float height = 1.75;
+	float increase = height / numberObjects;
 
-	for (int i = 0; i < 10; i++) {
+	
+
+	for (int i = 0; i < numberObjects; i++) {
 
 
 		objects.push_back(object());
 
-		objects[i].radius = 0.01;						//0.001538
+		objects[i].radius = 0.001538;						//0.001538
 		objects[i].mass = 5;
 		objects[i].color1 = 1.0;
 		objects[i].color2 = 0.0;
@@ -422,8 +440,8 @@ void init(std::vector<object>& objects, box box1) {
 		objects[i].coordinatesX = xposition;
 		objects[i].coordinatesY = yposition;
 	
-		objects[i].velocityX =  0.5;
-		objects[i].velocityY =  0.4;
+		objects[i].velocityX =  0.2;
+		objects[i].velocityY =  0.2;
 
 		objects[i].accelerationX = 0.0;
 		objects[i].accelerationY = 0.0;
@@ -437,7 +455,7 @@ void init(std::vector<object>& objects, box box1) {
 
 		objects[i].renderSphereObject();
 					  
-		yposition += 0.1;
+		yposition += increase;
 
 	}
 	
