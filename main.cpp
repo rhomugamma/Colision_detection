@@ -3,13 +3,11 @@
 #include <iostream>
 #include <math.h>
 #include <vector>
-#include <random>
 
 const float PI = 3.14159265358979323;
 
 const float g = 9.80665;
 
-GLuint shaderProgram;
 
 class box {
 
@@ -422,7 +420,7 @@ const GLchar* fragmentShaderSource = R"(
 
 void init(std::vector<object>& objects, sample& sample1);
 
-void display(std::vector<object>& objects, box box1, sample& sample1, GLFWwindow* window);
+void display(std::vector<object>& objects, box box1, sample& sample1, GLFWwindow* window, GLuint& shaderProgram);
 
 void framebufferSizeCallback(GLFWwindow* window, int width, int height);
 
@@ -442,6 +440,8 @@ int main() {
 	box box1;
 
 	sample sample1;
+
+	GLuint shaderProgram;
 
 
     if (!glfwInit()) {
@@ -502,7 +502,7 @@ int main() {
     while (!glfwWindowShouldClose(window)) {
 
         glfwPollEvents();
-		display(objects, box1, sample1, window);
+		display(objects, box1, sample1, window, shaderProgram);
     
 	}
 
@@ -570,7 +570,7 @@ void init(std::vector<object>& objects, sample& sample1) {
 	
 }
 
-void display(std::vector<object>& objects, box box1, sample& sample1, GLFWwindow* window) {
+void display(std::vector<object>& objects, box box1, sample& sample1, GLFWwindow* window, GLuint& shaderProgram) {
 
 
 	glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
